@@ -13,6 +13,14 @@ class Translation
 end
 
 class Element
+  def self.parse(text)
+    new Nokogiri::XML.parse(text)
+  end
+
+  def self.parse_file(file)
+    parse File.read(file)
+  end
+
   def initialize(xml)
     @xml = xml
   end

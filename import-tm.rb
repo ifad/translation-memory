@@ -7,10 +7,10 @@ unless (f = ARGV[0])
 end
 
 begin
-  xml = Nokogiri::XML.parse File.read(f)
+  txml = Txml.parse_file(f)
 rescue
-  puts "Parsing #{f}: #$!"
+  puts $!
   exit 2
 end
 
-puts Txml.new(xml).translations
+puts txml.translations
