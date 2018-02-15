@@ -1,4 +1,5 @@
 require 'nokogiri'
+require 'time'
 
 class Translation
   attr_accessor :language, :source, :target, :user, :created_at, :updated_at
@@ -25,7 +26,6 @@ class Element
     @xml = xml
   end
 
-  protected
   def xpath(decl)
     @xml.xpath(decl)
   end
@@ -34,11 +34,31 @@ class Element
     xpath(decl).text
   end
 
-  def elem(klass, decl)
-    klass.new(xpath(decl))
+  def time(decl)
+    Time.parse(text(decl))
   end
 
-  def elems(klass, decl)
-    xpath(decl).map {|xml| klass.new(xml)}
+  def elem(klass, decl, *args)
+    klass.new(xpath(decl), *args)
   end
+
+  def elems(klass, decl, *args)
+    xpath(decl).map {|xml| klass.new(xml, *args)}
+  end
+
+  def inspect
+    details = self.class === Element ? root_xml_inspect : format_inspect
+
+    "#<#{self.class} #{details}>"
+  end
+
+  protected
+    def format_inspect
+      '/not implemented/'
+    end
+
+  private
+    def root_xml_inspect
+      "#{@xml.version} #{@xml.encoding} root: \"#{@xml.root.node_name}\" \\ #{@xml.root.children.reject(&:text?).map(&:node_name)}"
+    end
 end
