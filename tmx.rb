@@ -27,6 +27,17 @@ module Tmx
     end
 
     def translations
+      units.inject([]) do |ret, unit|
+        xl = Translation.new
+        xl.language   = unit.target_language
+        xl.user       = unit.created_by
+        xl.created_at = unit.created_at
+        xl.updated_at = unit.updated_at
+        xl.source     = unit.source
+        xl.target     = unit.target
+
+        ret.push xl
+      end
     end
   end
 
@@ -54,6 +65,14 @@ module Tmx
 
     def unit_values
       elems(UnitValue, './tuv')
+    end
+
+    def source_language
+      @source_language
+    end
+
+    def target_language
+      target_unit.language
     end
 
     def source_unit
