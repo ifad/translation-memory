@@ -1,6 +1,6 @@
-require 'active_record'
 require './txml'
 require './tmx'
+require './pontoon'
 
 format, source = ARGV
 
@@ -28,4 +28,20 @@ rescue
   exit 3
 end
 
-puts processed.translations
+pg_env = %w( PGUSER PGHOST PGDATABASE PGPASSWORD )
+
+missing = pg_env.select {|k| ENV[k].blank? }
+if missing.present?
+  puts "Please set #{missing.join(' and ')} in the environment"
+  exit 4
+end
+
+begin
+  Pontoon.connect(adapter: 'postgresql')
+  Pontoon.import!(processed, 'ICP')
+rescue
+  puts $!
+  exit 5
+end
+
+puts "Successsssssss!!"
