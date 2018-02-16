@@ -5,7 +5,7 @@ module Tmx
     Document.parse_file(*args)
   end
 
-  class Document < Element
+  class Document < XMLObject
     def format_inspect
       "source_language: `#{source_language}` created: `#{created_at}` author: `#{created_by}` units: #{units.count}"
     end
@@ -41,7 +41,7 @@ module Tmx
     end
   end
 
-  class Unit < Element
+  class Unit < XMLObject
     def initialize(xml, source_language)
       super(xml)
       @source_language = source_language
@@ -92,7 +92,7 @@ module Tmx
     end
   end
 
-  class UnitValue < Element
+  class UnitValue < XMLObject
     def format_inspect
       "language: #{language} string: #{string}"
     end

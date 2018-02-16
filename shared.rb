@@ -13,7 +13,7 @@ class Translation
   end
 end
 
-class Element
+class XMLObject
   def self.parse(text)
     new Nokogiri::XML.parse(text)
   end
@@ -47,7 +47,7 @@ class Element
   end
 
   def inspect
-    details = self.class === Element ? root_xml_inspect : format_inspect
+    details = self.class === XMLObject ? root_xml_inspect : format_inspect
 
     "#<#{self.class} #{details}>"
   end

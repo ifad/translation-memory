@@ -12,7 +12,7 @@ module Txml
     Document.parse_file(*args)
   end
 
-  class Document < Element
+  class Document < XMLObject
     def format_inspect
       "concept_groups: #{concept_groups.size}"
     end
@@ -56,7 +56,7 @@ module Txml
   #   [... <languageGrp></languageGrp> ...]
   # </conceptGrp>
   #
-  class ConceptGroup < Element
+  class ConceptGroup < XMLObject
     def format_inspect
       "languages: #{languages} groups: #{language_groups.size}"
     end
@@ -78,7 +78,7 @@ module Txml
   #   [... <termGrp></termGrp> ...]
   # </languageGrp>
   #
-  class LanguageGroup < Element
+  class LanguageGroup < XMLObject
     def format_inspect
       "language: #{language} terms: #{term_groups.size}"
     end
@@ -105,7 +105,7 @@ module Txml
   #   </transacGrp>
   # </termGrp>
   #
-  class TermGroup < Element
+  class TermGroup < XMLObject
     def format_inspect
       "term: #{term}"
     end
