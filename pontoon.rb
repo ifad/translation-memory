@@ -229,14 +229,14 @@ module Pontoon
         where(locale: self.locale).first!
     end
 
-    def translated_resources
+    def translated_resource
       self.resource.translated_resources.
         where(locale: self.locale).first!
     end
 
     private
       def update_latest_translation_ids
-        [ self.translated_resources,
+        [ self.translated_resource,
           self.project_locale,
           self.locale,
           self.project,
