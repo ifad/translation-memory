@@ -246,7 +246,8 @@ module Pontoon
       end
 
       def update_translation_counters
-        [ self.project_locale,
+        [ self.translated_resource,
+          self.project_locale,
           self.locale,
           self.project,
         ].each do |object|
