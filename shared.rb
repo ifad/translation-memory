@@ -11,6 +11,14 @@ class Translation
   def to_s
     "[#{language}, #{user}] `#{source}` > `#{target}`"
   end
+
+  def source_excerpt
+    self.source.slice(0..35) + '...'
+  end
+
+  def language_code
+    language.sub(/-\w+$/, '').downcase # Remove country specifier
+  end
 end
 
 class XMLObject

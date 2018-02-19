@@ -28,20 +28,12 @@ rescue
   exit 3
 end
 
-pg_env = %w( PGUSER PGHOST PGDATABASE PGPASSWORD )
-
-missing = pg_env.select {|k| ENV[k].blank? }
-if missing.present?
-  puts "Please set #{missing.join(' and ')} in the environment"
-  exit 4
-end
-
 begin
-  Pontoon.connect(adapter: 'postgresql')
-  Pontoon.import!(processed, 'ICP')
+  Pontoon.connect!
+  Pontoon.import!(processed.translations, 'ICP')
 rescue
   puts $!
-  exit 5
+  exit 4
 end
 
 puts "Successsssssss!!"
