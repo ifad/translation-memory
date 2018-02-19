@@ -90,8 +90,8 @@ module Pontoon
     end
 
     record.date = translation.created_at
-    record.approved = true
-    record.approved_date = translation.updated_at
+    record.approved = false
+    #record.approved_date = translation.updated_at
     record.fuzzy = false
     record.extra = '{}'
     record.user = User.lookup_or_default(translation.user)
@@ -251,7 +251,7 @@ module Pontoon
           self.locale,
           self.project,
         ].each do |object|
-          object.increment!(:approved_strings, 1)
+          object.increment!(:translated_strings, 1)
         end
       end
   end
