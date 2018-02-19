@@ -11,8 +11,9 @@ module Pontoon
     end
 
     ActiveRecord::Base.logger = Logger.new($stderr)
+    ActiveRecord::Base.logger.level = :info
 
-    bark("Connecting to #{ENV['PGHOST']}")
+    cheer "Connecting to #{ENV['PGHOST']}"
 
     ActiveRecord::Base.establish_connection(adapter: 'postgresql')
   end
@@ -23,17 +24,30 @@ module Pontoon
 
     configured_locales = project.locales.map(&:code)
 
+    imported = 0
+    translations.sort! {|a,b| a.updated_at <=> b.updated_at }
+
     translations.each do |translation|
       if configured_locales.include?(translation.language_code)
-        import_translation!(project, translation)
+
+        if import_translation!(project, translation)
+          imported += 1
+        end
+
       else
         bark "Skipping #{translation.source_excerpt}: #{translation.language_code} not in project configured locales"
       end
     end
+
+    cheer "Imported #{imported} out of #{translations.size}!"
   end
 
   def self.bark(woof)
     ActiveRecord::Base.logger.info("\e[1;31m#{woof}\e[0;0m")
+  end
+
+  def self.cheer(woof)
+    ActiveRecord::Base.logger.info("\e[1;32m#{woof}\e[0;0m")
   end
 
   def self.import_translation!(project, translation)
@@ -46,7 +60,7 @@ module Pontoon
         by_string(translation.source).to_a
 
       if entities.blank?
-        bark "Skipping #{translation.source_excerpt}: not found"
+        bark "Skipping #{translation.language_code} - #{translation.source_excerpt}: not found"
         return
       end
 
@@ -55,6 +69,8 @@ module Pontoon
         if pontoon_translation
           create_memory!(pontoon_translation, project, translation, entity)
           ret = true
+
+          cheer "Imported #{translation.language_code} - #{translation.source_excerpt}"
         end
       end
 

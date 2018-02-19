@@ -35,5 +35,3 @@ rescue
   puts $!
   exit 4
 end
-
-puts "Successsssssss!!"
