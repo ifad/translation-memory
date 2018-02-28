@@ -18,9 +18,11 @@ module Pontoon
     ActiveRecord::Base.establish_connection(adapter: 'postgresql')
   end
 
-  def self.import!(translations, project_name)
-    project = Project.lookup(project_name)
-    raise "Project not found: #{project_name}" unless project
+  def self.import!(translations, project_slug)
+    project = Project.lookup(project_slug)
+    unless project
+      raise "Project with slug `#{project_slug}' was not found"
+    end
 
     configured_locales = project.locales.map(&:code)
 
@@ -129,8 +131,8 @@ module Pontoon
 
     belongs_to :latest_translation, class_name: 'Translation'
 
-    def self.lookup(name)
-      where(name: name).first
+    def self.lookup(slug)
+      where(slug: slug).first
     end
   end
 
