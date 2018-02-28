@@ -48,6 +48,10 @@ module Pontoon
     ActiveRecord::Base.logger.info("\e[1;31m#{woof}\e[0;0m")
   end
 
+  def self.hmmm(woof)
+    ActiveRecord::Base.logger.info("\e[1;33m#{woof}\e[0;0m")
+  end
+
   def self.cheer(woof)
     ActiveRecord::Base.logger.info("\e[1;32m#{woof}\e[0;0m")
   end
@@ -87,7 +91,7 @@ module Pontoon
       find_or_initialize_by({})
 
     if record.persisted?
-      bark "Skipping #{entity.key}: already translated to #{translation.language_code}"
+      hmmm "Skipping #{entity.key}: already translated to #{translation.language_code}"
       return
     end
 
