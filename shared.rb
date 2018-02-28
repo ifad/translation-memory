@@ -35,7 +35,7 @@ class XMLObject
   end
 
   def xpath(decl)
-    @xml.xpath(decl)
+    @xml.xpath(decl, namespaces)
   end
 
   def text(decl)
@@ -52,6 +52,10 @@ class XMLObject
 
   def elems(klass, decl, *args)
     xpath(decl).map {|xml| klass.new(xml, *args)}
+  end
+
+  def namespaces
+    {}
   end
 
   def inspect
