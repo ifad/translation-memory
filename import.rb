@@ -2,10 +2,10 @@ require './txml'
 require './tmx'
 require './pontoon'
 
-format, source = ARGV
+format, source, project_slug = ARGV
 
 unless format && source
-  puts "Usage: #$0 <format> <source file>"
+  puts "Usage: #$0 <format> <source file> <project slug>"
   exit 1
 end
 
@@ -30,7 +30,7 @@ end
 
 begin
   Pontoon.connect!
-  Pontoon.import!(processed.translations, 'ICP')
+  Pontoon.import!(processed.translations, project_slug)
 rescue
   puts $!
   exit 4
