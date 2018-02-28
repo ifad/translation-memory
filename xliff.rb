@@ -87,9 +87,11 @@ module Xliff
 
     private
       def metadata_time(key)
-        Time.strptime(metadata(key), '%m/%d/%Y %H:%M:%S')
+        time = metadata(key)
+        Time.strptime(time, '%m/%d/%Y %H:%M:%S')
       rescue
-          nil
+        puts "Unable to parse time `#{time}` on #{key}"
+        Time.now
       end
 
       def metadata(key)
