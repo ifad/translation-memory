@@ -40,6 +40,8 @@ module Xliff
 
     def translations
       units.inject([]) do |ret, unit|
+        next ret if unit.source.strip.empty?
+
         xl = Translation.new
 
         xl.language   = self.target_language
