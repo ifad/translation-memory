@@ -3,7 +3,7 @@ require './tmx'
 require './xliff'
 require './pontoon'
 
-format, source, project_slug = ARGV
+format, project_slug, source = ARGV
 
 unless format && source
   puts "Usage: #$0 <format> <source file> <project slug>"
