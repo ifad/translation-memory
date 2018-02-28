@@ -6,7 +6,7 @@ require './pontoon'
 format, project_slug, source = ARGV
 
 unless format && source
-  puts "Usage: #$0 <format> <source file> <project slug>"
+  puts "Usage: #$0 <format> <project slug> <source file>"
   exit 1
 end
 
