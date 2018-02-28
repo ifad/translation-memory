@@ -49,7 +49,7 @@ module Tmx
     end
 
     def format_inspect
-      "target_language: `foo` created: `#{created_at}` author: `#{created_by}`"
+      "target_language: `#{target_language}` created: `#{created_at}` author: `#{created_by}`"
     end
 
     def created_at
