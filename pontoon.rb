@@ -57,8 +57,6 @@ module Pontoon
   end
 
   def self.import_translation!(project, translation)
-    ret = false
-
     ActiveRecord::Base.transaction do
 
       entities = Entity.
@@ -67,22 +65,23 @@ module Pontoon
 
       if entities.blank?
         bark "Skipping #{translation.language_code} - #{translation.source_excerpt}: not found"
-        return
+        return false
       end
 
       entities.each do |entity|
         pontoon_translation = create_translation!(project, translation, entity)
         if pontoon_translation
           create_memory!(pontoon_translation, project, translation, entity)
-          ret = true
 
           cheer "Imported #{translation.language_code} - #{translation.source_excerpt}"
+        else
+          hmmm "Skipping #{entity.key}: already translated to #{translation.language_code}"
         end
       end
 
     end
 
-    return ret
+    return true
   end
 
   def self.create_translation!(project, translation, entity)
@@ -90,10 +89,7 @@ module Pontoon
       by_locale(translation.language_code).
       find_or_initialize_by({})
 
-    if record.persisted?
-      hmmm "Skipping #{entity.key}: already translated to #{translation.language_code}"
-      return
-    end
+    return if record.persisted?
 
     record.date = translation.created_at
     record.approved = false
