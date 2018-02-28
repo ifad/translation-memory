@@ -4,6 +4,11 @@ require 'time'
 class Translation
   attr_accessor :language, :source, :target, :user, :created_at, :updated_at
 
+  def user=(user)
+    # Remove DOMAIN\\
+    @user = user.sub(/^.+\\/, '')
+  end
+
   def inspect
     "#<Translation #{self}>"
   end

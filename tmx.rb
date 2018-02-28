@@ -29,8 +29,9 @@ module Tmx
     def translations
       units.inject([]) do |ret, unit|
         xl = Translation.new
+
         xl.language   = unit.target_language
-        xl.user       = unit.created_by.sub(/^\w+\\/, '')
+        xl.user       = unit.created_by
         xl.created_at = unit.created_at
         xl.updated_at = unit.updated_at
         xl.source     = unit.source
