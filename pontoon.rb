@@ -54,13 +54,20 @@ module Pontoon
   def self.openlog(name)
     @log = CSV.open(name, 'w')
     @log.sync = true
-    @log << ['Result', 'Language', 'LS Label', 'ICP Label', 'ICP ID']
+    @log << ['Result', 'Language', 'LS Label', 'Pontoon Label', 'Pontoon ID', 'Translation']
   end
 
-  def self.log(what, ls_xlation, icp_xlation)
+  def self.log(what, ls_xlation, pontoon_entity, pontoon_xlation)
     raise 'Log not open' unless @log
 
-    @log << [what, ls_xlation.language_code, ls_xlation.source, icp_xlation.try(:string), icp_xlation.try(:id)]
+    @log << [
+      what,
+      ls_xlation.language_code,
+      ls_xlation.source,
+      pontoon_entity.try(:string),
+      pontoon_entity.try(:id),
+      pontoon_xlation.try(:string)
+    ]
   end
 
   def self.closelog
@@ -90,7 +97,7 @@ module Pontoon
         by_string(translation.source).to_a
 
       if entities.blank?
-        log 'NOTFOUND', translation, nil
+        log 'NOTFOUND', translation, nil, nil
 
         bark "Skipping #{translation.language_code} - #{translation.source_excerpt}: not found"
         return false
@@ -102,13 +109,13 @@ module Pontoon
         if pontoon_translation
           create_memory!(pontoon_translation, project, translation, entity)
 
-          log 'IMPORT', translation, pontoon_translation
+          log 'IMPORT', translation, entity, pontoon_translation
 
           cheer "Imported #{translation.language_code} - #{translation.source_excerpt}"
         else
-          hmmm "Skipping #{entity.key}: already translated to #{translation.language_code}"
+          log 'SKIPPED', translation, entity, nil
 
-          log 'SKIPPED', translation, pontoon_translation
+          hmmm "Skipping #{entity.key}: already translated to #{translation.language_code}"
         end
       end
 
