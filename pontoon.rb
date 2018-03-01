@@ -224,7 +224,7 @@ module Pontoon
     }
 
     scope :by_string, ->(string) {
-      where(%[regexp_replace(lower(trim(string)), '\\s\\s*', ' ') = regexp_replace(lower(trim(?)), '\\s\\s*', ' ')], string)
+      where(%[regexp_replace(lower(trim(string)), '[^\\w]+', '', 'g') = regexp_replace(lower(trim(?)), '[^\\w]+', '', 'g')], string)
     }
   end
 
