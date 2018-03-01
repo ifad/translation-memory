@@ -1,4 +1,5 @@
 require 'active_record'
+require 'csv'
 require './shared'
 
 module Pontoon
@@ -19,6 +20,9 @@ module Pontoon
   end
 
   def self.import!(translations, project_slug)
+    log_name = "IMPORT-#{Time.now.strftime('%Y-%m-%d.%H%M%S')}.csv"
+    openlog(log_name)
+
     project = Project.lookup(project_slug)
     unless project
       raise "Project with slug `#{project_slug}' was not found"
@@ -42,6 +46,28 @@ module Pontoon
     end
 
     cheer "Imported #{imported} out of #{translations.size}!"
+    cheer "Written log to #{log_name}"
+
+    closelog
+  end
+
+  def self.openlog(name)
+    @log = CSV.open(name, 'w')
+    @log.sync = true
+    @log << ['Result', 'Language', 'LS Label', 'ICP Label', 'ICP ID']
+  end
+
+  def self.log(what, ls_xlation, icp_xlation)
+    raise 'Log not open' unless @log
+
+    @log << [what, ls_xlation.language_code, ls_xlation.source, icp_xlation.try(:string), icp_xlation.try(:id)]
+  end
+
+  def self.closelog
+    raise 'Log not open' unless @log
+
+    @log.close
+    @log = nil
   end
 
   def self.bark(woof)
@@ -64,18 +90,25 @@ module Pontoon
         by_string(translation.source).to_a
 
       if entities.blank?
+        log 'NOTFOUND', translation, nil
+
         bark "Skipping #{translation.language_code} - #{translation.source_excerpt}: not found"
         return false
       end
 
       entities.each do |entity|
         pontoon_translation = create_translation!(project, translation, entity)
+
         if pontoon_translation
           create_memory!(pontoon_translation, project, translation, entity)
+
+          log 'IMPORT', translation, pontoon_translation
 
           cheer "Imported #{translation.language_code} - #{translation.source_excerpt}"
         else
           hmmm "Skipping #{entity.key}: already translated to #{translation.language_code}"
+
+          log 'SKIPPED', translation, pontoon_translation
         end
       end
 
