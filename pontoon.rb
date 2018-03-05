@@ -92,9 +92,7 @@ module Pontoon
   def self.import_translation!(project, translation)
     ActiveRecord::Base.transaction do
 
-      entities = Entity.
-        by_project(project).
-        by_string(translation.source).to_a
+      entities = project.entities.by_string(translation.source).to_a
 
       if entities.blank?
         log 'NOTFOUND', translation, nil, nil
@@ -163,11 +161,13 @@ module Pontoon
   class Project < ActiveRecord::Base
     self.table_name = 'base_project'
 
-    has_many :resources, inverse_of: :project
-    has_many :memories,  inverse_of: :project
+    has_many :resources,       inverse_of: :project
+    has_many :memories,        inverse_of: :project
+    has_many :project_locales, inverse_of: :project
 
-    has_many :project_locales
-    has_many :locales, through: :project_locales
+    has_many :entities,     through: :resources
+    has_many :translations, through: :entities
+    has_many :locales,      through: :project_locales
 
     belongs_to :latest_translation, class_name: 'Translation'
 
@@ -182,6 +182,7 @@ module Pontoon
     has_many :translations, inverse_of: :locale
     has_many :memories,     inverse_of: :locale
     has_many :translated_resources, inverse_of: :locale
+    has_many :project_locales, inverse_of: :locale
 
     belongs_to :latest_translation, class_name: 'Translation'
 
@@ -194,8 +195,8 @@ module Pontoon
   class ProjectLocale < ActiveRecord::Base
     self.table_name = 'base_projectlocale'
 
-    belongs_to :project
-    belongs_to :locale
+    belongs_to :project, inverse_of: :project_locales
+    belongs_to :locale,  inverse_of: :project_locales
 
     belongs_to :latest_translation, class_name: 'Translation'
   end
@@ -225,10 +226,6 @@ module Pontoon
 
     has_many :translations, inverse_of: :entity
     has_many :memories,     inverse_of: :entity
-
-    scope :by_project, ->(project) {
-      where(resource_id: Resource.where(project_id: project))
-    }
 
     scope :by_string, ->(string) {
       where(%[regexp_replace(lower(trim(string)), '[^\\w]+', '', 'g') = regexp_replace(lower(trim(?)), '[^\\w]+', '', 'g')], string)
