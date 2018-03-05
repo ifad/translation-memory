@@ -126,12 +126,22 @@ module Pontoon
     return true
   end
 
-  def self.export_missing_translations_for(project, locale)
-    output_name = timed_file_name("MISSING-#{locale}-#{project.slug}", 'csv')
-    output = CSV.open(output_name, 'w')
-    output << [ 'Key', 'String', 'Translation', 'Comment', 'Resource', 'Author', 'Date/Time' ]
+  def self.export_missing_translations_for(project, locale, mode = :single)
+    exporter = ['export', mode, 'entities'].join('_')
+    raise "Invalid mode: #{mode}" unless respond_to?(exporter)
 
     entities = project.entities.includes(:resource).missing_translations_on(locale).to_a
+
+    output = timed_file_name("MISSING-#{locale}-#{project.slug}", 'csv')
+    output = CSV.open(output, 'w')
+
+    self.public_send(exporter, entities, output)
+
+    output.close
+  end
+
+  def self.export_single_entities(entities, output)
+    output << [ 'Key', 'String', 'Translation', 'Comment', 'Resource', 'Author', 'Date/Time' ]
 
     entities.each do |entity|
       output << [
@@ -145,9 +155,35 @@ module Pontoon
       ]
     end
 
-    output.close
+    cheer "Exported #{entities.count} entities to #{output.path}"
+  end
 
-    cheer "Exported #{entities.count} entities to #{output_name}"
+  def self.export_condensed_entities(entities, output)
+    output << [ 'Key', 'String', 'Translation', 'Comment', 'Author', 'Date/Time' ]
+
+    entities_by_string = entities.inject({}) do |h, entity|
+      string = entity.string.downcase.strip
+
+      h[string] ||= []
+      h[string].push(entity)
+
+      h
+    end
+
+    entities_by_string.each do |string, es|
+      keys = es.map {|e| [e.resource.path, e.key].join(':') }.join(';')
+
+      output << [
+        keys,
+        es.first.string, # As it's more or less the same...
+        '', # Translation
+        es.map(&:comment).join("\n\n"),
+        '', # Author
+        '', # Date/Time
+      ]
+    end
+
+    cheer "Exported #{entities.count} entities to #{output.path} as #{entities_by_string.count} rows"
   end
 
   def self.create_translation!(project, translation, entity)
