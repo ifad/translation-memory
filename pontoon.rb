@@ -19,8 +19,12 @@ module Pontoon
     ActiveRecord::Base.establish_connection(adapter: 'postgresql')
   end
 
+  def self.timed_file_name(prefix, ext)
+    "#{prefix}-#{Time.now.strftime('%Y-%m-%d.%H%M%S')}.csv"
+  end
+
   def self.import!(translations, project_slug)
-    log_name = "IMPORT-#{Time.now.strftime('%Y-%m-%d.%H%M%S')}.csv"
+    log_name = timed_file_name('IMPORT', 'csv')
     openlog(log_name)
 
     project = Project.lookup(project_slug)
@@ -120,6 +124,30 @@ module Pontoon
     end
 
     return true
+  end
+
+  def self.export_missing_translations_for(project, locale)
+    output_name = timed_file_name("MISSING-#{locale}-#{project.slug}", 'csv')
+    output = CSV.open(output_name, 'w')
+    output << [ 'Key', 'String', 'Translation', 'Comment', 'Resource', 'Author', 'Date/Time' ]
+
+    entities = project.entities.includes(:resource).missing_translations_on(locale).to_a
+
+    entities.each do |entity|
+      output << [
+        entity.key,
+        entity.string,
+        '', # Translation
+        entity.comment,
+        entity.resource.path,
+        '', # Author
+        '', # Date/Time
+      ]
+    end
+
+    output.close
+
+    cheer "Exported #{entities.count} entities to #{output_name}"
   end
 
   def self.create_translation!(project, translation, entity)
@@ -229,6 +257,15 @@ module Pontoon
 
     scope :by_string, ->(string) {
       where(%[regexp_replace(lower(trim(string)), '[^\\w]+', '', 'g') = regexp_replace(lower(trim(?)), '[^\\w]+', '', 'g')], string)
+    }
+
+    scope :missing_translations_on, ->(locale) {
+      project = current_scope.proxy_association.owner
+      unless project.is_a?(Project)
+        raise ArgumentError, "Can only be called from a Project scope"
+      end
+
+      where.not(id: project.translations.by_locale(locale).select(:entity_id))
     }
   end
 
