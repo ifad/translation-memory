@@ -183,7 +183,8 @@ module Pontoon
       ]
     end
 
-    cheer "Exported #{entities.count} entities to #{output.path} as #{entities_by_string.count} rows"
+    gain = ((1 - entities_by_string.count.to_f/entities.count.to_f) * 100).round(2)
+    cheer "Exported #{entities.count} entities to #{output.path} as #{entities_by_string.count} rows (#{gain}% gain)"
   end
 
   def self.create_translation!(project, translation, entity)
