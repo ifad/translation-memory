@@ -2,7 +2,7 @@ require 'nokogiri'
 require 'time'
 
 class Translation
-  attr_accessor :language, :source, :target, :user, :created_at, :updated_at
+  attr_accessor :language, :source, :target, :user, :created_at, :updated_at, :resource, :key
 
   def user=(user)
     # Remove DOMAIN\\

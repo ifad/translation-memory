@@ -96,7 +96,13 @@ module Pontoon
   def self.import_translation!(project, translation)
     ActiveRecord::Base.transaction do
 
-      entities = project.entities.by_string(translation.source).to_a
+      entities = if translation.resource && translation.key
+        project.entities.by_resource_and_key(translation.resource, translation.key)
+      else
+        project.entities.by_string(translation.source)
+      end
+
+      entities = entities.to_a
 
       if entities.blank?
         log 'NOTFOUND', translation, nil, nil
@@ -273,6 +279,10 @@ module Pontoon
 
     has_many :entities, inverse_of: :resource
     has_many :translated_resources, inverse_of: :resource
+
+    scope :by_path, ->(path) {
+      where(path: path)
+    }
   end
 
   class TranslatedResource < ActiveRecord::Base
@@ -291,6 +301,18 @@ module Pontoon
 
     has_many :translations, inverse_of: :entity
     has_many :memories,     inverse_of: :entity
+
+    scope :by_resource_and_key, ->(resource, key) {
+      by_resource(resource).by_key(key)
+    }
+
+    scope :by_resource, ->(resource) {
+      where(resource_id: Resource.by_path(resource))
+    }
+
+    scope :by_key, ->(key) {
+      where(key: key)
+    }
 
     scope :by_string, ->(string) {
       where(%[regexp_replace(lower(trim(string)), '[^\\w]+', '', 'g') = regexp_replace(lower(trim(?)), '[^\\w]+', '', 'g')], string)
