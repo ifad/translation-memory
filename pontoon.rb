@@ -209,6 +209,7 @@ module Pontoon
     record.entity_document = [entity.key, translation.target, nil, nil].join(' ')
     record.string = translation.target
     record.rejected = false
+    record.verbatim = false
     record.save!
 
     return record
