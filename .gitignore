@@ -1,3 +1,4 @@
 .env*
 *.sw?
 .byebug_history
+IMPORT-*
