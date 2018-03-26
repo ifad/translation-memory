@@ -258,7 +258,13 @@ module Pontoon
 
     belongs_to :latest_translation, class_name: 'Translation'
 
+    def to_s
+      code
+    end
+
     def self.lookup(code)
+      return code if code.is_a?(self)
+
       code = code.sub(/-\w+$/, '') # Remove country specifier
       where('lower(code) = ?', code.downcase).first
     end
