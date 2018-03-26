@@ -193,6 +193,29 @@ module Pontoon
     cheer "Exported #{entities.count} entities to #{output.path} as #{entities_by_string.count} rows (#{gain}% gain)"
   end
 
+  def self.export_translations(translations, project, locale)
+    output = timed_file_name("TRANSLATIONS-#{locale}-#{project.slug}", 'csv')
+    output = CSV.open(output, 'w')
+
+    output << [ 'Resource', 'Key', 'String', 'Translation', 'Comment', 'Author', 'Date/Time' ]
+
+    translations.each do |translation|
+      output << [
+        translation.resource.path,
+        translation.entity.key,
+        translation.entity.string,
+        translation.string,
+        translation.entity.comment,
+        translation.user.username,
+        translation.date.localtime,
+      ]
+    end
+
+    output.close
+
+    cheer "Exported #{translations.count} to #{output.path}"
+  end
+
   def self.create_translation!(project, translation, entity)
     record = entity.translations.
       by_locale(translation.language_code).
@@ -342,14 +365,18 @@ module Pontoon
     belongs_to :locale, inverse_of: :translations
     belongs_to :user,   inverse_of: :translations
 
-    belongs_to :approved_user_id,   class_name: 'User'
-    belongs_to :unapproved_user_id, class_name: 'User'
-    belongs_to :rejected_user_id,   class_name: 'User'
-    belongs_to :unrejected_user_id, class_name: 'User'
+    belongs_to :approved_user,   class_name: 'User'
+    belongs_to :unapproved_user, class_name: 'User'
+    belongs_to :rejected_user,   class_name: 'User'
+    belongs_to :unrejected_user, class_name: 'User'
 
     has_many :memories, inverse_of: :translation
 
     scope :approved, -> { where(approved: true) }
+
+    scope :by_approver, ->(username) {
+      where(approved_user_id: User.by_username(username))
+    }
 
     scope :by_locale, ->(code) {
       where(locale_id: Locale.lookup(code))
@@ -412,8 +439,10 @@ module Pontoon
 
     has_many :translations, inverse_of: :user
 
+    scope :by_username, ->(uid) { where(username: uid) }
+
     def self.lookup(uid)
-      where(username: uid).first
+      by_username(uid).first
     end
 
     def self.default
