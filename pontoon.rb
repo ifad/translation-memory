@@ -115,8 +115,6 @@ module Pontoon
         pontoon_translation = create_translation!(project, translation, entity)
 
         if pontoon_translation
-          create_memory!(pontoon_translation, project, translation, entity)
-
           log 'IMPORT', translation, entity, pontoon_translation
 
           cheer "Imported #{translation.language_code} - #{translation.source_excerpt}"
@@ -236,21 +234,6 @@ module Pontoon
     record.save!
 
     return record
-  end
-
-  def self.create_memory!(pontoon_translation, project, translation, entity)
-    memory = Memory.new
-
-    memory.source = translation.source
-    memory.target = translation.target
-
-    memory.entity = entity
-    memory.locale = pontoon_translation.locale
-    memory.translation = pontoon_translation
-    memory.project = project
-    memory.save!
-
-    return memory
   end
 
   class Project < ActiveRecord::Base
@@ -422,6 +405,21 @@ module Pontoon
         ].each do |object|
           object.increment!(:translated_strings, 1)
         end
+      end
+
+      def create_memory
+        memory = Memory.new
+
+        memory.source      = self.entity.string
+        memory.target      = self.string
+
+        memory.entity      = self.entity
+        memory.locale      = self.locale
+        memory.project     = self.project
+
+        memory.translation = self
+
+        memory.save!
       end
   end
 
