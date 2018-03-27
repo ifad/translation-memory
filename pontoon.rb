@@ -365,8 +365,19 @@ module Pontoon
       where(locale_id: Locale.lookup(code))
     }
 
+    scope :by_string, ->(string) {
+      where(string: string)
+    }
+
+    validate :check_approver_user_if_approved
+    validate :check_rejecter_user_if_rejected
+
     after_create :update_latest_translation_ids
-    after_create :update_translation_counters
+
+    after_create :increment_translated_string_counter
+    after_save   :increment_approved_string_counter
+
+    after_create :create_memory
 
     def resource
       self.entity.resource
@@ -386,24 +397,177 @@ module Pontoon
         where(locale: self.locale).first!
     end
 
+    def siblings
+      self.class.
+        where.not(id: self).
+        where(locale_id: self.locale_id, entity_id: self.entity_id)
+    end
+
+    def to_s
+      "#<Pontoon::Translation: #{self.locale}/#{self.resource.path}/#{self.entity.key}>"
+    end
+
+    def dup
+      dupe = self.class.new
+
+      dupe.entity_id = self.entity_id
+      dupe.locale_id = self.locale_id
+      dupe.extra     = self.extra
+      dupe.fuzzy     = self.fuzzy
+      dupe.verbatim  = self.verbatim
+
+      dupe.date      = Time.now
+
+      return dupe
+    end
+
+    def amend!(string, actor)
+      self.class.transaction do
+        # Check if this translation already exists, either create a new one
+        change = self.siblings.by_string(string).first || self.dup
+
+        change.user   = actor
+        change.string = string
+
+        self.reject!(actor)
+        change.approve!(actor)
+      end
+    end
+
+    def approve!(actor)
+      if self.approved?
+        raise ArgumentError, "#{self} is already approved"
+      end
+
+      self.approved = true
+      self.approved_user = actor
+      self.approved_date = Time.now
+
+      self.rejected = false
+      self.rejected_user = nil
+      self.rejected_date = nil
+
+      self.unapproved_user = nil
+      self.unapproved_date = nil
+
+      self.save!
+    end
+
+    def unapprove!(actor)
+      unless self.approved?
+        raise ArgumentError, "#{self} is not approved"
+      end
+
+      self.approved = false
+      self.approved_user = nil
+      self.approved_date = nil
+
+      self.unapproved_user = actor
+      self.unapproved_date = Time.now
+
+      self.save!
+    end
+
+    def reject!(actor)
+      if self.rejected?
+        raise ArgumentError, "#{self} is already rejected"
+      end
+
+      self.approved = false
+      self.approved_user = nil
+      self.approved_date = nil
+
+      self.rejected = true
+      self.rejected_user = actor
+      self.rejected_date = Time.now
+
+      self.unapproved_user = nil
+      self.unapproved_date = nil
+
+      self.save!
+    end
+
     private
-      def update_latest_translation_ids
+      def check_approver_user_if_approved
+        return unless self.approved?
+
+        unless self.approved_user_id
+          errors.add :approved, "Approved translations require an approved_user_id"
+        end
+
+        unless self.approved_date
+          errors.add :approved, "Approved translations require an approved_date"
+        end
+
+        if self.unapproved_user_id
+          errors.add :approved, "Approved translations can't have an unapproved_user_id"
+        end
+
+        if self.unapproved_date
+          errors.add :approved, "Approved translations can't have an unapproved_date"
+        end
+
+        if self.rejected?
+          errors.add :approved, "Approved translations can't be rejected at the same time"
+        end
+
+        if self.rejected_user_id
+          errors.add :approved, "Approved translations can't have a rejected_user_id"
+        end
+
+        if self.rejected_date
+          errors.add :approved, "Approved translations can't have a rejected_date"
+        end
+      end
+
+      def check_rejecter_user_if_rejected
+        return unless self.rejected?
+
+        unless self.rejected_user_id
+          errors.add :rejected, "Rejected translations require a rejected_user_id"
+        end
+
+        unless self.rejected_date
+          errors.add :rejected, "Rejected translations require a rejected_date"
+        end
+
+        if self.approved_user_id
+          errors.add :approved, "Rejected translations can't have an approved_user_id"
+        end
+
+        if self.approved_date
+          errors.add :approved, "Rejected translations can't have an approved_date"
+        end
+      end
+
+      def related_objects_with_counters
         [ self.translated_resource,
           self.project_locale,
           self.locale,
           self.project,
-        ].each do |object|
+        ]
+      end
+
+      def update_latest_translation_ids
+        related_objects_with_counters.each do |object|
           object.update_column(:latest_translation_id, self.id)
         end
       end
 
-      def update_translation_counters
-        [ self.translated_resource,
-          self.project_locale,
-          self.locale,
-          self.project,
-        ].each do |object|
+      def increment_translated_string_counter
+        return unless self.siblings.blank? # Only if this is not a new version of an existing one
+
+        related_objects_with_counters.each do |object|
           object.increment!(:translated_strings, 1)
+        end
+      end
+
+      def increment_approved_string_counter
+        return unless self.saved_change_to_approved?
+
+        related_objects_with_counters.each do |object|
+          object.increment!(:approved_strings,   self.approved? ?  1 : -1)
+          object.increment!(:translated_strings, self.approved? ? -1 :  1)
         end
       end
 
