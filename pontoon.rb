@@ -204,7 +204,7 @@ module Pontoon
         translation.entity.string,
         translation.string,
         translation.entity.comment,
-        translation.user.username,
+        translation.user.try(:username) || 'IMPORTED',
         translation.date.localtime,
       ]
     end
