@@ -315,6 +315,8 @@ module Pontoon
     has_many :translations, inverse_of: :entity
     has_many :memories,     inverse_of: :entity
 
+    default_scope -> { where(obsolete: false) }
+
     scope :by_resource_and_key, ->(resource, key) {
       by_resource(resource).by_key(key)
     }
