@@ -566,7 +566,12 @@ module Pontoon
       end
 
       def increment_approved_string_counter
-        return unless self.saved_change_to_approved?
+        # Update this only if:
+        #  - the 'approved' attribute has been changed
+        #  - the 'approved' attribute was not nil
+        return if \
+          !self.saved_change_to_approved? ||
+          self.saved_change_to_approved.first.nil?
 
         related_objects_with_counters.each do |object|
           object.increment!(:approved_strings,   self.approved? ?  1 : -1)
