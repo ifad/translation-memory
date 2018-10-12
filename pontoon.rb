@@ -45,7 +45,7 @@ module Pontoon
         end
 
       else
-        bark "Skipping #{translation.source_excerpt}: #{translation.language_code} not in project configured locales"
+        bark "Skipping #{translation.key}: #{translation.language_code} not in project configured locales"
       end
     end
 
@@ -58,7 +58,7 @@ module Pontoon
   def self.openlog(name)
     @log = CSV.open(name, 'w')
     @log.sync = true
-    @log << ['Result', 'Language', 'LS Label', 'Pontoon Label', 'Pontoon ID', 'Translation']
+    @log << ['Result', 'Language', 'Key', 'LS Label', 'Pontoon Label', 'Pontoon ID', 'Translation']
   end
 
   def self.log(what, ls_xlation, pontoon_entity, pontoon_xlation)
@@ -67,6 +67,7 @@ module Pontoon
     @log << [
       what,
       ls_xlation.language_code,
+      ls_xlation.key,
       ls_xlation.source,
       pontoon_entity.try(:string),
       pontoon_entity.try(:id),
@@ -107,7 +108,7 @@ module Pontoon
       if entities.blank?
         log 'NOTFOUND', translation, nil, nil
 
-        bark "Skipping #{translation.language_code} - #{translation.source_excerpt}: not found"
+        bark "Skipping #{translation.key}/#{translation.language_code}: not found"
         return false
       end
 
@@ -117,11 +118,11 @@ module Pontoon
         if pontoon_translation
           log 'IMPORT', translation, entity, pontoon_translation
 
-          cheer "Imported #{translation.language_code} - #{translation.source_excerpt}"
+          cheer "Imported  #{translation.key}/#{translation.language_code}"
         else
           log 'SKIPPED', translation, entity, nil
 
-          hmmm "Skipping #{entity.key}: already translated to #{translation.language_code}"
+          hmmm "Skipping #{entity.key}/#{translation.language_code}: already translated"
         end
       end
 
