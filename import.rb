@@ -2,6 +2,7 @@ require './txml'
 require './tmx'
 require './xliff'
 require './tcsv'
+require './tcsv-simple'
 require './pontoon'
 
 format, project_slug, source = ARGV
@@ -16,6 +17,7 @@ formats = {
   'txml'  => Txml,
   'xliff' => Xliff,
   'tcsv'  => Tcsv,
+  'tcsvs' => TcsvSimple,
 }
 
 klass = formats.fetch(format, nil)

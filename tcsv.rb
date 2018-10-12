@@ -15,14 +15,16 @@ class Tcsv
     new CSV.parse(data, options)
   end
 
-  HEAD = ["Key", "String", "Translation", "Language", "Author", "Date/Time"]
+  def self.head
+    ["Key", "String", "Translation", "Language", "Author", "Date/Time"]
+  end
 
   def initialize(rows)
     @head = rows.shift
     @rows = rows
 
-    unless @head == HEAD
-      raise "Invalid heading #{@head.inspect}. Expecting #{HEAD.inspect}."
+    unless @head == self.class.head
+      raise "Invalid heading #{@head.inspect}. Expecting #{self.class.head.inspect}."
     end
   end
 
@@ -43,18 +45,22 @@ class Tcsv
     resource_keys.inject([]) do |ret, resource_key|
       resource, key = resource_key.split(':')
 
-      xl = Translation.new
-
-      xl.resource   = resource
-      xl.key        = key
-      xl.language   = language
-      xl.user       = author
-      xl.source     = source
-      xl.target     = target
-      xl.created_at = created_at
-      xl.updated_at = created_at
-
-      ret.push xl
+      ret.push make_translation(resource, key, language, author, source, target, created_at)
     end
+  end
+
+  def make_translation(resource, key, language, author, source, target, created_at)
+    xl = Translation.new
+
+    xl.resource   = resource
+    xl.key        = key
+    xl.language   = language
+    xl.user       = author
+    xl.source     = source
+    xl.target     = target
+    xl.created_at = created_at
+    xl.updated_at = created_at
+
+    return xl
   end
 end
