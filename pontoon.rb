@@ -609,7 +609,7 @@ module Pontoon
 
         related_objects_with_counters.each do |object|
           object.increment!(:approved_strings,   self.approved? ?  1 : -1)
-          object.increment!(:translated_strings, self.approved? ? -1 :  1)
+          object.increment!(:translated_strings, self.approved? ? -1 :  1) unless object.translated_strings.zero? # FIXME
         end
       end
 
