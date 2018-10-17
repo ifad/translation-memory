@@ -250,8 +250,18 @@ module Pontoon
 
     belongs_to :latest_translation, class_name: 'Translation'
 
-    def self.lookup(slug)
-      where(slug: slug).first
+    def self.lookup(slug_or_id)
+      return slug_or_id if slug_or_id.is_a?(Project)
+
+      if slug_or_id.to_s =~ /\A\d+\Z/
+        slug_or_id = slug_or_id.to_i
+      end
+
+      if slug_or_id.is_a?(Fixnum)
+        where(id: slug_or_id)
+      else
+        where(slug: slug_or_id)
+      end.first
     end
   end
 
@@ -294,6 +304,10 @@ module Pontoon
     has_many :entities, inverse_of: :resource
     has_many :translated_resources, inverse_of: :resource
 
+    scope :by_project, ->(project) {
+      where(project_id: Project.lookup(project))
+    }
+
     scope :by_path, ->(path) {
       where(path: path)
     }
@@ -322,7 +336,19 @@ module Pontoon
       by_resource(resource).by_key(key)
     }
 
+    scope :by_project, ->(project_id) {
+      by_resources(Resource.by_project(project_id))
+    }
+
+    scope :by_resources, ->(resources) {
+      where(resource_id: resources)
+    }
+
     scope :by_resource, ->(resource) {
+      unless resource.is_a?(Resource)
+        resource = Resource.by_path(resource)
+      end
+
       where(resource_id: Resource.by_path(resource))
     }
 
@@ -359,6 +385,9 @@ module Pontoon
     has_many :memories, inverse_of: :translation
 
     scope :approved, -> { where(approved: true) }
+    scope :suggested, -> { where(approved: false) }
+    scope :rejected, -> { where(rejected: true) }
+    scope :unrejected, -> { where(rejected: false) }
 
     scope :by_approver, ->(username) {
       where(approved_user_id: User.by_username(username))
@@ -370,6 +399,10 @@ module Pontoon
 
     scope :by_string, ->(string) {
       where(string: string)
+    }
+
+    scope :by_project, ->(project) {
+      where(entity_id: Entity.by_project(project))
     }
 
     validate :check_approver_user_if_approved
