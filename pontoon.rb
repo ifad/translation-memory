@@ -412,6 +412,7 @@ module Pontoon
 
     after_create :increment_translated_string_counter
     after_save   :increment_approved_string_counter
+    after_save   :mark_entity_as_changed
 
     after_create :create_memory
 
@@ -612,6 +613,17 @@ module Pontoon
         end
       end
 
+      def mark_entity_as_changed
+        # Update this only if:
+        #  - the 'approved' attribute has been changed
+        #  - the 'approved' attribute was not nil
+        return if \
+          !self.saved_change_to_approved? ||
+          self.saved_change_to_approved.first.nil?
+
+        ChangedEntityLocale.touch!(self.entity, self.locale)
+      end
+
       def create_memory
         memory = Memory.new
 
@@ -626,6 +638,23 @@ module Pontoon
 
         memory.save!
       end
+  end
+
+  class ChangedEntityLocale < ActiveRecord::Base
+    self.table_name = 'base_changedentitylocale'
+
+    belongs_to :entity
+    belongs_to :locale
+
+    validates :entity_id, :locale_id, :when, presence: true
+
+    def self.touch!(entity, locale)
+      transaction do
+        record = find_or_initialize_by(entity_id: entity.id, locale_id: locale.id)
+        record.when = Time.now
+        record.save!
+      end
+    end
   end
 
   class Memory < ActiveRecord::Base
